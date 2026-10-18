@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="st-bg" x1="61" y1="61" x2="963" y2="963" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="st-sheen" x1="0" y1="61" x2="0" y2="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="st-rim" x1="0" y1="61" x2="0" y2="963" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="st-shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <clipPath id="st-panel">
+      <rect x="-128" y="-88" width="256" height="176" rx="20"/>
+    </clipPath>
+  </defs>
+
+  <!-- Tile -->
+  <rect x="61" y="61" width="902" height="902" rx="204" fill="url(#st-bg)"/>
+  <rect x="61" y="61" width="902" height="902" rx="204" fill="url(#st-sheen)"/>
+  <rect x="64" y="64" width="896" height="896" rx="201" fill="none" stroke="url(#st-rim)" stroke-width="6"/>
+
+  <g>
+  <!-- Dashed selection marquee -->
+  <g stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" fill="none">
+    <path d="M384.5 282H414.5M497 282H527M609.5 282H639.5"/>
+    <path d="M384.5 742H414.5M497 742H527M609.5 742H639.5"/>
+    <path d="M282 384.5V414.5M282 497V527M282 609.5V639.5"/>
+    <path d="M742 384.5V414.5M742 497V527M742 609.5V639.5"/>
+  </g>
+  <!-- Corner handles -->
+  <g fill="#FFFFFF">
+    <rect x="242" y="242" width="80" height="80" rx="16"/>
+    <rect x="702" y="242" width="80" height="80" rx="16"/>
+    <rect x="242" y="702" width="80" height="80" rx="16"/>
+    <rect x="702" y="702" width="80" height="80" rx="16"/>
+  </g>
+
+  <!-- Thumbnail card -->
+  <g transform="translate(752 752) rotate(-8) scale(0.85)">
+    <rect x="-160" y="-102" width="320" height="240" rx="40" fill="#0B1F66" opacity="0.45" filter="url(#st-shadow)"/>
+    <rect x="-160" y="-120" width="320" height="240" rx="40" fill="#FFFFFF"/>
+    <g clip-path="url(#st-panel)">
+      <rect x="-128" y="-88" width="256" height="176" fill="#DBEAFE"/>
+      <circle cx="62" cy="-38" r="24" fill="#60A5FA"/>
+      <path d="M-140 70L-52 -14L14 48L56 12L140 82V100H-140Z" fill="#2563EB"/>
+    </g>
+  </g>
+  </g>
+</svg>

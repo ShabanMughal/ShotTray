@@ -4,7 +4,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Size](https://img.shields.io/badge/size-~30%20KB-lightgrey)
+![Size](https://img.shields.io/badge/download-%3C%201%20MB-lightgrey)
 
 ---
 
@@ -31,6 +31,8 @@
 5. *(Optional)* Add the folder to your `PATH` to use the `shot` command in any terminal.
 
 > **Windows SmartScreen warning?** The app isn't code-signed yet. Click **More info → Run anyway**.
+>
+> **Blocked by Smart App Control?** Windows 11's Smart App Control blocks all unsigned apps and has no "Run anyway" option. Until ShotTray is code-signed, you can either build it from source (below) on a PC where Smart App Control is off, or turn it off in **Windows Security → App & browser control → Smart App Control**. Note that on many Windows versions, turning it off can't be undone without resetting Windows.
 
 ### Option 2: Build from source
 
@@ -156,7 +158,15 @@ src/
   Native.cs            Win32 interop (hotkey, DPI)
   Store.cs             screenshot folder, naming, clean-up
   Cli.cs               the `shot` command
+  AssemblyInfo.cs      version number and file details
+assets/
+  icon.svg             icon source
+  icon-1024.png        icon render used to build the .ico
+  ShotTray.ico         multi-size Windows icon (16-256 px)
+tools/
+  MakeIcon.cs          turns icon-1024.png into ShotTray.ico
 build.bat              builds bin\ShotTray.exe and bin\shot.exe
+release.bat            builds and zips a release: release.bat 0.1.0
 ```
 
 ## Roadmap

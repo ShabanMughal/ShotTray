@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Threading;
@@ -17,7 +16,7 @@ namespace ShotTray
         const string RunName = "ShotTray";
         const string HotkeyText = "Ctrl+Shift+4";
 
-        internal static readonly Icon AppIcon = MakeIcon();
+        internal static readonly Icon AppIcon = LoadIcon();
 
         readonly NotifyIcon tray;
         readonly HotkeyWindow hotkey;
@@ -44,7 +43,7 @@ namespace ShotTray
             menu.Items.Add("Exit", null, delegate { Exit(); });
 
             tray = new NotifyIcon();
-            tray.Icon = AppIcon;
+            tray.Icon = new Icon(AppIcon, SystemInformation.SmallIconSize);
             tray.Text = "ShotTray - " + HotkeyText + " to capture";
             tray.ContextMenuStrip = menu;
             tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) CaptureSoon(); };
@@ -174,24 +173,11 @@ namespace ShotTray
             ExitThread();
         }
 
-        // Blue square with a dashed selection box.
-        static Icon MakeIcon()
+        // assets\ShotTray.ico, embedded by build.bat. Holds every size; windows pick the one they need.
+        static Icon LoadIcon()
         {
-            int s = SystemInformation.SmallIconSize.Width;
-            float u = s / 16f;
-            using (var bmp = new Bitmap(s, s))
-            {
-                using (Graphics g = Graphics.FromImage(bmp))
-                using (var fill = new SolidBrush(Color.FromArgb(37, 118, 235)))
-                using (var pen = new Pen(Color.White, 1.5f * u))
-                {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    g.FillRectangle(fill, 0.5f * u, 0.5f * u, 15 * u, 15 * u);
-                    pen.DashStyle = DashStyle.Dash;
-                    g.DrawRectangle(pen, 3.5f * u, 3.5f * u, 9 * u, 9 * u);
-                }
-                return Icon.FromHandle(bmp.GetHicon());
-            }
+            using (Stream s = typeof(TrayApp).Assembly.GetManifestResourceStream("ShotTray.ico"))
+                return s != null ? new Icon(s) : SystemIcons.Application;
         }
     }
 }

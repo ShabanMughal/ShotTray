@@ -1,0 +1,31 @@
+@echo off
+rem Builds and packages a release zip: release.bat 0.1.0  ->  dist\ShotTray-v0.1.0.zip
+setlocal
+cd /d "%~dp0"
+
+if "%~1"=="" (
+  echo Usage: release.bat VERSION   e.g. release.bat 0.1.0
+  exit /b 2
+)
+set VERSION=%~1
+set STAGE=dist\ShotTray-v%VERSION%
+
+findstr /c:"AssemblyInformationalVersion(\"%VERSION%\")" src\AssemblyInfo.cs >nul
+if errorlevel 1 (
+  echo src\AssemblyInfo.cs does not say version %VERSION%. Update it first.
+  exit /b 1
+)
+
+call "%~dp0build.bat" || exit /b 1
+
+if exist "%STAGE%" rmdir /s /q "%STAGE%"
+if exist "%STAGE%.zip" del "%STAGE%.zip"
+mkdir "%STAGE%"
+copy /y bin\ShotTray.exe "%STAGE%" >nul
+copy /y bin\shot.exe "%STAGE%" >nul
+copy /y README.md "%STAGE%" >nul
+copy /y LICENSE "%STAGE%" >nul
+
+powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%\*' -DestinationPath '%STAGE%.zip' -Force" || exit /b 1
+rmdir /s /q "%STAGE%"
+echo Created %STAGE%.zip
