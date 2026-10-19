@@ -18,23 +18,46 @@
 - **Copied to the clipboard automatically**: `Ctrl+V` pastes the image in apps and the file in Explorer.
 - **CLI friendly**: `shot` prints the latest screenshot path, so you can hand it to terminal tools and AI coding assistants.
 - **Auto clean-up**: screenshots older than 7 days are deleted.
-- **Tiny and dependency-free**: two small `.exe` files, no installer or runtime download needed.
+- **Tiny and dependency-free**: two small `.exe` files and no runtime download. Use the installer, or the portable zip.
 
 ## Installation
 
-### Option 1: Download
+### Option 1: Installer (recommended)
 
-1. Download the latest `ShotTray.zip` from the [Releases](../../releases) page.
-2. Extract it anywhere, for example `C:\Tools\ShotTray`.
-3. Run `ShotTray.exe`. A blue icon appears in the system tray.
-4. *(Optional)* Right-click the tray icon and choose **Start with Windows**.
-5. *(Optional)* Add the folder to your `PATH` to use the `shot` command in any terminal.
+1. Download `ShotTray-Setup-vX.Y.Z.exe` from the [latest release](../../releases/latest).
+2. Run it. No admin rights are needed: it installs for your user only, into `%LOCALAPPDATA%\Programs\ShotTray`.
+3. Pick your options:
+   - **Start ShotTray when I sign in to Windows**
+   - **Add the "shot" command to PATH** (open a new terminal afterwards)
+   - **Create a desktop shortcut**
+4. Read the **How to use ShotTray** page, a quick tour of every feature.
+5. Click **Finish** with **Launch ShotTray** ticked. A blue icon appears in the system tray.
 
-> **Windows SmartScreen warning?** The app isn't code-signed yet. Click **More info → Run anyway**.
->
-> **Blocked by Smart App Control?** Windows 11's Smart App Control blocks all unsigned apps and has no "Run anyway" option. Until ShotTray is code-signed, you can either build it from source (below) on a PC where Smart App Control is off, or turn it off in **Windows Security → App & browser control → Smart App Control**. Note that on many Windows versions, turning it off can't be undone without resetting Windows.
+To update, run the newer installer; it closes ShotTray and replaces it in place, keeping your screenshots and settings.
+If Windows shows a warning the first time, see [First-run warnings](#first-run-warnings).
 
-### Option 2: Build from source
+### Option 2: Portable zip
+
+1. Download `ShotTray-vX.Y.Z.zip` from the [latest release](../../releases/latest).
+2. *(Recommended)* Right-click the zip → **Properties** → tick **Unblock** → **OK**. This skips the warning in step 4.
+3. Right-click the zip → **Extract All**, and pick a permanent folder, for example `C:\Tools\ShotTray`.
+4. Run `ShotTray.exe`. A blue icon appears in the system tray.
+5. *(Optional)* Right-click the tray icon and choose **Start with Windows**.
+6. *(Optional)* Add the folder to your `PATH` to use the `shot` command in any terminal.
+
+#### First-run warnings
+
+ShotTray isn't code-signed yet, so Windows may warn you the first time. This is normal for new open-source apps.
+
+| You see | What to do |
+|---|---|
+| Edge: *"isn't commonly downloaded"* | **⋯ → Keep → Show more → Keep anyway** |
+| **"Windows protected your PC"** (SmartScreen) | Click **More info**, then **Run anyway**. Windows only asks once. |
+| **"Smart App Control blocked an app"** | There's no way to allow a single app. Smart App Control must be turned off in **Windows Security → App & browser control → Smart App Control settings**. ⚠️ On many Windows versions, turning it off can't be undone without resetting Windows. |
+
+You can check that your download is genuine by comparing its SHA-256 hash with the one on the release page; see [SECURITY.md](SECURITY.md#verifying-downloads).
+
+### Option 3: Build from source
 
 No SDK needed. The build uses the C# compiler that ships with Windows (.NET Framework 4.x).
 
@@ -139,6 +162,10 @@ Anything you drag or "Save as" somewhere else is a copy and is **never** auto-de
 
 ## Uninstall
 
+**Installed with the installer:** go to **Settings → Apps → Installed apps → ShotTray → Uninstall** (or use **Uninstall ShotTray** in the Start menu). It closes the app, removes the startup entry and the PATH entry, and asks whether to delete your saved screenshots too.
+
+**Portable zip:**
+
 1. Right-click the tray icon, untick **Start with Windows**, then click **Exit**.
 2. Delete the app folder.
 3. *(Optional)* Delete `%LOCALAPPDATA%\ShotTray`.
@@ -165,8 +192,12 @@ assets/
   ShotTray.ico         multi-size Windows icon (16-256 px)
 tools/
   MakeIcon.cs          turns icon-1024.png into ShotTray.ico
+  make-installer-images.ps1  draws the installer's logo artwork
+installer/
+  ShotTray.iss         Inno Setup script for the installer
+  QuickStart.rtf       "How to use ShotTray" page shown at the end of setup
 build.bat              builds bin\ShotTray.exe and bin\shot.exe
-release.bat            builds and zips a release: release.bat 0.1.0
+release.bat            builds the zip and installer: release.bat 0.1.0
 ```
 
 ## Roadmap
@@ -177,15 +208,21 @@ release.bat            builds and zips a release: release.bat 0.1.0
 - [ ] Blur / pixelate tool for hiding sensitive info
 - [ ] Crop in the editor
 - [ ] Settings: hotkey, thumbnail duration, retention days, save folder
-- [ ] Installer and `winget` package
+- [x] Installer
+- [ ] `winget` package
+
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How ShotTray works inside: components, capture flow, DPI, drag & drop, editor |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Building, coding rules (C# 5), test checklist, releasing |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
+| [SECURITY.md](SECURITY.md) | Reporting vulnerabilities, what the app touches, verifying downloads |
 
 ## Contributing
 
-Issues and pull requests are welcome. Please keep the project dependency-free and buildable with `build.bat`.
-
-1. Fork the repo
-2. Create a branch: `git checkout -b feature/my-feature`
-3. Commit your changes and open a pull request
+Issues and pull requests are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. In short, keep it dependency-free, C# 5 compatible and buildable with `build.bat`.
 
 ## License
 
