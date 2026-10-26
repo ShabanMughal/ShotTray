@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- `Ctrl+Shift+5` capture toolbar, like macOS: Capture Entire Screen, Capture Selected Window, Capture Selected Portion, Record Entire Screen, Record Selected Portion, and an Options menu with a 5/10 s timer, Show Mouse Pointer and Show Mouse Clicks. Choices are remembered.
+- Screen recording to H.264 MP4 (30 fps) with the Media Foundation encoder built into Windows, using a hardware encoder when one is available. While recording, a floating stop button shows the elapsed time and a red frame marks a selected portion; neither appears in the video. Stop with the button, `Ctrl+Shift+5` or the tray icon.
+- Video thumbnails: click to play, drag to share, right-click to copy, save or delete.
+- `Space` switches between area and window selection while capturing.
 - Windows installer (`ShotTray-Setup-vX.Y.Z.exe`): per-user install with no admin prompt, Start menu shortcut, optional desktop shortcut, optional "Start with Windows" and `shot` on PATH, in-place upgrades, and an uninstaller in Settings → Apps. It shows the ShotTray logo, lists the features on the Welcome page, and ends with a "How to use ShotTray" guide.
 
 ## [0.1.0] - 2026-10-18

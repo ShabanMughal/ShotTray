@@ -54,7 +54,7 @@ RestartApplications=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Messages]
-WelcomeLabel2=This will install [name/ver] on your computer.%n%nmacOS-style area screenshots for Windows:%n%n•  Ctrl+Shift+4, drag a box, done%n•  Floating thumbnail you can drag into any app or folder%n•  Markup: pen, highlighter, arrows, boxes, ellipses, text%n•  Every capture is copied to the clipboard and saved automatically%n•  "shot" command prints the latest screenshot path%n•  Old screenshots are cleaned up after 7 days%n%nA quick guide on how to use everything is shown at the end.
+WelcomeLabel2=This will install [name/ver] on your computer.%n%nmacOS-style area screenshots for Windows:%n%n•  Ctrl+Shift+4, drag a box, done%n•  Ctrl+Shift+5: capture a screen or window, or record the screen to MP4%n•  Floating thumbnail you can drag into any app or folder%n•  Markup: pen, highlighter, arrows, boxes, ellipses, text%n•  Every capture is copied to the clipboard and saved automatically%n•  "shot" command prints the latest screenshot path%n•  Old screenshots are cleaned up after 7 days%n%nA quick guide on how to use everything is shown at the end.
 WizardInfoAfter=How to use ShotTray
 InfoAfterLabel=A quick tour of everything ShotTray can do.
 InfoAfterClickLabel=When you're done reading, click Next.
@@ -81,6 +81,8 @@ Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 ; Same value the tray menu's "Start with Windows" toggle reads and writes.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ShotTray"; ValueData: """{app}\{#AppExe}"""; Tasks: startup
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "ShotTray"; Flags: dontcreatekey uninsdeletevalue
+; Capture toolbar choices (Settings.cs).
+Root: HKCU; Subkey: "Software\ShotTray"; Flags: dontcreatekey uninsdeletekey
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent

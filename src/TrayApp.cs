@@ -15,27 +15,41 @@ namespace ShotTray
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         const string RunName = "ShotTray";
         const string HotkeyText = "Ctrl+Shift+4";
+        const string BarHotkeyText = "Ctrl+Shift+5";
 
         internal static readonly Icon AppIcon = LoadIcon();
 
         readonly NotifyIcon tray;
-        readonly HotkeyWindow hotkey;
+        readonly HotkeyWindow hotkey, barHotkey;
         readonly Timer cleanupTimer;
-        readonly ToolStripMenuItem startupItem;
+        readonly ToolStripMenuItem startupItem, stopItem;
         ThumbnailForm thumbnail;
+        CaptureBar bar;
+        Recorder recorder;
+        RecordingBar recordingBar;
+        RegionFrame regionFrame;
         bool capturing;
 
         public TrayApp()
         {
             Store.Cleanup();
+            try { Settings.Load(); }
+            catch (Exception) { } // unreadable values: keep the defaults
 
             var captureItem = new ToolStripMenuItem("Capture area", null, delegate { CaptureSoon(); });
             captureItem.ShortcutKeyDisplayString = HotkeyText;
+            var barItem = new ToolStripMenuItem("Capture or record...", null, delegate { ToggleBar(); });
+            barItem.ShortcutKeyDisplayString = BarHotkeyText;
+            stopItem = new ToolStripMenuItem("Stop recording", null, delegate { StopRecording(); });
+            stopItem.ShortcutKeyDisplayString = BarHotkeyText;
+            stopItem.Visible = false;
             startupItem = new ToolStripMenuItem("Start with Windows", null, OnToggleStartup);
             startupItem.Checked = IsStartupEnabled();
 
             var menu = new ContextMenuStrip();
+            menu.Items.Add(stopItem);
             menu.Items.Add(captureItem);
+            menu.Items.Add(barItem);
             menu.Items.Add("Open screenshots folder", null, delegate { OpenFolder(); });
             menu.Items.Add("Copy last screenshot path", null, delegate { CopyLastPath(); });
             menu.Items.Add(new ToolStripSeparator());
@@ -46,15 +60,24 @@ namespace ShotTray
             tray.Icon = new Icon(AppIcon, SystemInformation.SmallIconSize);
             tray.Text = "ShotTray - " + HotkeyText + " to capture";
             tray.ContextMenuStrip = menu;
-            tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) CaptureSoon(); };
+            tray.MouseClick += (s, e) =>
+            {
+                if (e.Button != MouseButtons.Left) return;
+                if (recorder != null) StopRecording();
+                else CaptureSoon();
+            };
             tray.Visible = true;
 
             hotkey = new HotkeyWindow(Native.MOD_CONTROL | Native.MOD_SHIFT, Keys.D4);
             hotkey.Pressed += delegate { Capture(); };
-            if (hotkey.Registered)
-                tray.ShowBalloonTip(2500, "ShotTray is running", "Press " + HotkeyText + " to capture an area.", ToolTipIcon.None);
-            else
+            barHotkey = new HotkeyWindow(Native.MOD_CONTROL | Native.MOD_SHIFT, Keys.D5);
+            barHotkey.Pressed += delegate { ToggleBar(); };
+            if (!hotkey.Registered)
                 tray.ShowBalloonTip(5000, "ShotTray", HotkeyText + " is already used by another app. Click the tray icon to capture.", ToolTipIcon.Warning);
+            else if (!barHotkey.Registered)
+                tray.ShowBalloonTip(5000, "ShotTray", BarHotkeyText + " is already used by another app. Use the tray menu to record.", ToolTipIcon.Warning);
+            else
+                tray.ShowBalloonTip(2500, "ShotTray is running", "Press " + HotkeyText + " to capture an area, or " + BarHotkeyText + " to record the screen.", ToolTipIcon.None);
 
             cleanupTimer = new Timer();
             cleanupTimer.Interval = 6 * 60 * 60 * 1000;
@@ -77,21 +100,10 @@ namespace ShotTray
             capturing = true;
             try
             {
-                if (thumbnail != null)
-                {
-                    thumbnail.Close();
-                    Application.DoEvents();
-                    Thread.Sleep(80); // give DWM a frame to remove it from the screen
-                }
-
+                if (bar != null) bar.Close();
+                ClearScreen();
                 Bitmap shot = SelectionOverlay.Run();
-                if (shot == null) return;
-
-                string path = Store.NewPath();
-                shot.Save(path, ImageFormat.Png);
-                Clip.SetImageAndFile(shot, path);
-
-                ShowThumbnail(shot, path);
+                if (shot != null) SaveShot(shot);
             }
             catch (Exception ex)
             {
@@ -101,6 +113,137 @@ namespace ShotTray
             {
                 capturing = false;
             }
+        }
+
+        // Close the thumbnail and give DWM a frame to remove it before the screen is captured.
+        void ClearScreen()
+        {
+            if (thumbnail == null) return;
+            thumbnail.Close();
+            Application.DoEvents();
+            Thread.Sleep(80);
+        }
+
+        void SaveShot(Bitmap shot)
+        {
+            string path = Store.NewPath();
+            shot.Save(path, ImageFormat.Png);
+            Clip.SetImageAndFile(shot, path);
+            ShowThumbnail(shot, path);
+        }
+
+        // Ctrl+Shift+5: open or close the toolbar; while recording, stop instead.
+        void ToggleBar()
+        {
+            if (recorder != null) { StopRecording(); return; }
+            if (capturing) return;
+            if (bar != null) { bar.Close(); return; }
+
+            var b = new CaptureBar();
+            b.FormClosed += delegate { if (bar == b) bar = null; b.Dispose(); };
+            b.Chosen += mode =>
+            {
+                // Wait for the bar to leave the screen before freezing it.
+                var t = new Timer();
+                t.Interval = 150;
+                t.Tick += delegate { t.Dispose(); RunMode(mode); };
+                t.Start();
+            };
+            bar = b;
+            b.Show();
+        }
+
+        void RunMode(CaptureMode mode)
+        {
+            if (capturing || recorder != null) return;
+            capturing = true;
+            bool record = Settings.IsRecording(mode);
+            try
+            {
+                ClearScreen();
+
+                // Screenshots: the timer runs before the screen freezes, so a menu can be opened first.
+                if (!record && Settings.TimerSeconds > 0)
+                {
+                    if (!Countdown.Run(Settings.TimerSeconds)) return;
+                    Application.DoEvents();
+                    Thread.Sleep(80);
+                }
+
+                PickMode pick = mode == CaptureMode.Window ? PickMode.Window
+                    : mode == CaptureMode.Screen || mode == CaptureMode.RecordScreen ? PickMode.Screen
+                    : PickMode.Area;
+                Rectangle area;
+                Bitmap shot = SelectionOverlay.Run(pick, record ? "Click to record this screen" : "Click to capture this screen", out area);
+                if (shot == null) return;
+                if (!record)
+                {
+                    SaveShot(shot);
+                    return;
+                }
+                shot.Dispose();
+
+                // Recordings: pick the area first, then count down.
+                if (Settings.TimerSeconds > 0 && !Countdown.Run(Settings.TimerSeconds)) return;
+                StartRecording(area, mode == CaptureMode.RecordArea);
+            }
+            catch (Exception ex)
+            {
+                tray.ShowBalloonTip(4000, "ShotTray", (record ? "Recording" : "Screenshot") + " failed: " + ex.Message, ToolTipIcon.Error);
+            }
+            finally
+            {
+                capturing = false;
+            }
+        }
+
+        void StartRecording(Rectangle area, bool showFrame)
+        {
+            var rec = new Recorder(area, Store.NewVideoPath(), Settings.ShowPointer, Settings.ShowClicks);
+            rec.Finished += OnRecordingFinished;
+            rec.Start();
+            recorder = rec;
+
+            recordingBar = RecordingBar.ShowFor(rec, area);
+            recordingBar.StopClicked += delegate { StopRecording(); };
+            if (showFrame) regionFrame = RegionFrame.ShowFor(area);
+
+            stopItem.Visible = true;
+            tray.Text = "ShotTray - recording (click to stop)";
+        }
+
+        void StopRecording()
+        {
+            if (recorder == null) return;
+            recorder.Stop();
+            CloseRecordingUI();
+        }
+
+        void CloseRecordingUI()
+        {
+            if (recordingBar != null) { recordingBar.Close(); recordingBar.Dispose(); recordingBar = null; }
+            if (regionFrame != null) { regionFrame.Close(); regionFrame.Dispose(); regionFrame = null; }
+            stopItem.Visible = false;
+            tray.Text = "ShotTray - " + HotkeyText + " to capture";
+        }
+
+        // Runs on the UI thread once the MP4 is finished.
+        void OnRecordingFinished(object sender, EventArgs e)
+        {
+            var rec = (Recorder)sender;
+            if (rec == recorder) recorder = null;
+            CloseRecordingUI();
+
+            Bitmap poster = rec.TakePoster();
+            if (rec.Error != null)
+            {
+                if (poster != null) poster.Dispose();
+                tray.ShowBalloonTip(4000, "ShotTray", "Recording failed: " + rec.Error.Message, ToolTipIcon.Error);
+                return;
+            }
+            if (poster == null) return;
+            Clip.SetFile(rec.FilePath);
+            ShowThumbnail(poster, rec.FilePath);
         }
 
         void ShowThumbnail(Bitmap shot, string path)
@@ -165,8 +308,17 @@ namespace ShotTray
 
         void Exit()
         {
+            if (recorder != null)
+            {
+                recorder.Finished -= OnRecordingFinished;
+                recorder.StopAndWait(); // finish the MP4 so it stays playable
+                recorder = null;
+            }
+            CloseRecordingUI();
+            if (bar != null) bar.Close();
             cleanupTimer.Dispose();
             hotkey.Dispose();
+            barHotkey.Dispose();
             if (thumbnail != null) thumbnail.Close();
             tray.Visible = false;
             tray.Dispose();

@@ -16,6 +16,14 @@ namespace ShotTray
             Set(data);
         }
 
+        // Recordings: Ctrl+V pastes the video file in Explorer, chat apps and browsers.
+        public static void SetFile(string path)
+        {
+            var data = new DataObject();
+            data.SetFileDropList(new StringCollection { path });
+            Set(data);
+        }
+
         public static void SetImage(Image image)
         {
             var data = new DataObject();

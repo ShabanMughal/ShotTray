@@ -11,7 +11,8 @@ using Timer = System.Windows.Forms.Timer;
 namespace ShotTray
 {
     // The floating preview in the bottom-right corner. Drag it out to copy the file,
-    // click to mark up, right-click for more. Fades after 6 s; the file stays in the temp folder.
+    // click to mark up (or play, for a recording), right-click for more.
+    // Fades after 6 s; the file stays in the temp folder.
     class ThumbnailForm : Form
     {
         const int LifeMs = 6000;
@@ -19,6 +20,7 @@ namespace ShotTray
         readonly Bitmap image;
         readonly Bitmap preview;
         readonly string path;
+        readonly bool isVideo;
         readonly Rectangle previewRect;
         readonly Timer lifeTimer = new Timer();
         readonly Timer animTimer = new Timer();
@@ -38,6 +40,7 @@ namespace ShotTray
         {
             this.image = image;
             this.path = path;
+            isVideo = path.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
 
             float scale;
             using (Graphics g = Graphics.FromHwnd(IntPtr.Zero)) scale = g.DpiX / 96f;
@@ -100,9 +103,17 @@ namespace ShotTray
         ContextMenuStrip BuildMenu()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Edit", null, delegate { RequestEdit(); });
-            menu.Items.Add("Open", null, delegate { OpenFile(); CloseSoon(); });
-            menu.Items.Add("Copy image", null, delegate { Clip.SetImageAndFile(image, path); });
+            if (isVideo)
+            {
+                menu.Items.Add("Play", null, delegate { OpenFile(); CloseSoon(); });
+                menu.Items.Add("Copy video", null, delegate { Clip.SetFile(path); });
+            }
+            else
+            {
+                menu.Items.Add("Edit", null, delegate { RequestEdit(); });
+                menu.Items.Add("Open", null, delegate { OpenFile(); CloseSoon(); });
+                menu.Items.Add("Copy image", null, delegate { Clip.SetImageAndFile(image, path); });
+            }
             menu.Items.Add("Copy path", null, delegate { Clip.SetText(path); });
             menu.Items.Add("Save as...", null, delegate { SaveAs(); });
             menu.Items.Add("Show in folder", null, delegate { ShowInFolder(); CloseSoon(); });
@@ -210,7 +221,12 @@ namespace ShotTray
             base.OnMouseUp(e);
             if (e.Button != MouseButtons.Left || !mouseDown) return;
             mouseDown = false;
-            RequestEdit();
+            if (isVideo)
+            {
+                OpenFile();
+                CloseSoon();
+            }
+            else RequestEdit();
         }
 
         void RequestEdit()
@@ -317,8 +333,8 @@ namespace ShotTray
             using (var dlg = new SaveFileDialog())
             {
                 dlg.FileName = Path.GetFileName(path);
-                dlg.Filter = "PNG image (*.png)|*.png";
-                dlg.DefaultExt = "png";
+                dlg.Filter = isVideo ? "MP4 video (*.mp4)|*.mp4" : "PNG image (*.png)|*.png";
+                dlg.DefaultExt = isVideo ? "mp4" : "png";
                 dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
                 if (dlg.ShowDialog() != DialogResult.OK)
                 {
@@ -355,6 +371,25 @@ namespace ShotTray
                 g.DrawRectangle(pen, previewRect.X - 1, previewRect.Y - 1, previewRect.Width + 1, previewRect.Height + 1);
                 g.DrawRectangle(pen, 0, 0, ClientSize.Width - 1, ClientSize.Height - 1);
             }
+            if (isVideo) DrawPlayBadge(g);
+        }
+
+        void DrawPlayBadge(Graphics g)
+        {
+            int d = Math.Min(Math.Min(previewRect.Width, previewRect.Height) - 8, (int)(40 * DeviceScale()));
+            if (d < 12) return;
+            int cx = previewRect.X + previewRect.Width / 2, cy = previewRect.Y + previewRect.Height / 2;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var disc = new SolidBrush(Color.FromArgb(150, 0, 0, 0)))
+                g.FillEllipse(disc, cx - d / 2, cy - d / 2, d, d);
+            float t = d * 0.22f;
+            using (var white = new SolidBrush(Color.White))
+                g.FillPolygon(white, new[] { new PointF(cx - t * 0.8f, cy - t), new PointF(cx - t * 0.8f, cy + t), new PointF(cx + t * 1.1f, cy) });
+        }
+
+        float DeviceScale()
+        {
+            using (Graphics g = CreateGraphics()) return g.DpiX / 96f;
         }
 
         protected override void Dispose(bool disposing)

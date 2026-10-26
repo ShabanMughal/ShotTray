@@ -58,7 +58,11 @@ The two binaries share only `Store.cs`, which knows where screenshots live and h
 | `Program.cs` | Entry point. Single-instance guard, process DPI awareness, WinForms setup. |
 | `TrayApp.cs` | `ApplicationContext` that lives for the whole session. Owns the tray icon, menu, hotkey, clean-up timer and the current thumbnail, and runs the capture flow. |
 | `Native.cs` | Win32 interop: `RegisterHotKey`, DPI awareness switching, virtual-screen metrics. Also `HotkeyWindow`, a message-only window that receives `WM_HOTKEY`. |
-| `SelectionOverlay.cs` | Full-screen modal form showing a frozen, dimmed snapshot of all monitors; the user drags a box. Returns the cropped `Bitmap` or `null`. |
+| `SelectionOverlay.cs` | Full-screen modal form showing a frozen, dimmed snapshot of all monitors; the user drags a box, or clicks a highlighted window or monitor (`PickMode`). Returns the cropped `Bitmap` (and its physical screen rectangle) or `null`. |
+| `CaptureBar.cs` | The `Ctrl+Shift+5` toolbar. A custom-painted form: mode buttons, Options menu, Capture/Record button. Raises `Chosen` with a `CaptureMode`. |
+| `Recorder.cs` | Screen recording. A worker thread BitBlts the area into a DIB 30 times a second, draws the cursor and click highlights, and feeds the frames to a Media Foundation sink writer that encodes H.264 into an MP4. Also holds the minimal MF COM interop. |
+| `RecordingUI.cs` | `Countdown` (timer), `RecordingBar` (elapsed time and stop button) and `RegionFrame` (red frame just outside a recorded portion). The last two are excluded from capture with `WDA_EXCLUDEFROMCAPTURE`. |
+| `Settings.cs` | `CaptureMode` and the toolbar's remembered options (`HKCU\Software\ShotTray`). |
 | `ThumbnailForm.cs` | Floating preview in the bottom-right corner: slide-in, 6 s life, fade-out, click/drag/right-click handling. |
 | `DragGhost.cs` | Click-through picture of the thumbnail that follows the cursor during drag and drop. |
 | `EditorForm.cs` | Markup window: toolbar, zoom-to-fit canvas, mouse handling, undo/redo, render and save. |

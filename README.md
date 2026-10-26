@@ -11,6 +11,8 @@
 ## Features
 
 - **Ctrl+Shift+4 area capture**: the screen freezes and dims, you drag a box, and a live size badge shows the dimensions. Works across multiple monitors and mixed DPI scaling.
+- **Ctrl+Shift+5 toolbar**: like macOS, capture the entire screen, a single window or a selected portion, or **record the screen to MP4**. Options for a 5/10 s timer, showing the mouse pointer and highlighting clicks.
+- **Screen recording**: entire screen or a selected portion, H.264 MP4 at 30 fps using the encoder built into Windows. A floating stop button shows the elapsed time and stays out of the video.
 - **Floating thumbnail**: slides in at the bottom-right and stays for 6 seconds. It stays while you hover over it.
 - **Markup**: click the thumbnail to draw on it with a pen, highlighter, arrows, rectangles, ellipses and text.
 - **Drag & drop anywhere**: Desktop, Explorer folders, browsers, Discord, Slack, VS Code and more.
@@ -78,6 +80,35 @@ The output goes to `bin\ShotTray.exe` and `bin\shot.exe`.
 | Capture an area | `Ctrl + Shift + 4`, then drag |
 | Cancel | `Esc` or right-click |
 | Capture from the tray | Left-click the tray icon |
+| Switch between area and window (while selecting) | `Space` |
+
+### Capture and record toolbar
+
+Press `Ctrl + Shift + 5` to open the toolbar at the bottom of the screen.
+
+```text
+ ⓧ │ [Screen] [Window] [Portion] │ [Record Screen] [Record Portion] │ Options ▾  [ Capture ]
+```
+
+| Button | What it does |
+|---|---|
+| Capture Entire Screen | Captures the whole monitor (with several monitors, click the one you want) |
+| Capture Selected Window | Hover a window to highlight it, click to capture it |
+| Capture Selected Portion | Drag a box, like `Ctrl+Shift+4` |
+| Record Entire Screen | Records the whole monitor to MP4 |
+| Record Selected Portion | Drag a box, then everything inside it is recorded (shown with a red frame) |
+| Options | **Timer** (None / 5 s / 10 s), **Show Mouse Pointer**, **Show Mouse Clicks** |
+| Capture / Record | Starts the selected mode (`Enter`) |
+
+`←` `→` change the mode, `Esc` or ⓧ closes the toolbar, and you can drag it by its empty space. Your choices are remembered.
+
+**While recording**, a small pill at the top of the screen shows the elapsed time. Stop with any of these:
+
+- Click the pill's stop button
+- `Ctrl + Shift + 5`
+- Left-click the tray icon, or **Stop recording** in the tray menu
+
+The recording is saved as `rec_….mp4`, copied to the clipboard as a file, and shown as a thumbnail. Click the thumbnail to play it, or drag it into a chat, a browser or a folder.
 
 ### The thumbnail
 
@@ -112,7 +143,9 @@ Click the thumbnail to open the editor. **Done** saves your drawing into the scr
 
 ### Tray menu
 
+- **Stop recording** (only while recording)
 - **Capture area**
+- **Capture or record...** (opens the toolbar)
 - **Open screenshots folder**
 - **Copy last screenshot path**
 - **Start with Windows** (toggle)
@@ -156,7 +189,7 @@ cp "$(shot)" ./docs/images/
 %LOCALAPPDATA%\ShotTray\Screenshots\
 ```
 
-Files are named like `shot_2026-10-18_14-32-05.png` (no spaces, so they're easy to use in a terminal).
+Files are named like `shot_2026-10-18_14-32-05.png` and `rec_2026-10-18_14-32-05.mp4` (no spaces, so they're easy to use in a terminal).
 Files older than **7 days** are deleted automatically when the app starts and every 6 hours after that.
 Anything you drag or "Save as" somewhere else is a copy and is **never** auto-deleted.
 
@@ -176,7 +209,11 @@ Anything you drag or "Save as" somewhere else is a copy and is **never** auto-de
 src/
   Program.cs           entry point, single-instance guard
   TrayApp.cs           tray icon, menu, hotkey, capture flow
-  SelectionOverlay.cs  full-screen area selector
+  SelectionOverlay.cs  full-screen area / window / screen picker
+  CaptureBar.cs        Ctrl+Shift+5 capture and record toolbar
+  Recorder.cs          screen recording to MP4 (Media Foundation)
+  RecordingUI.cs       countdown, stop button, frame around the recorded area
+  Settings.cs          toolbar choices, saved in the registry
   ThumbnailForm.cs     floating preview with drag & drop
   DragGhost.cs         thumbnail picture that follows the cursor while dragging
   EditorForm.cs        markup window and toolbar
@@ -202,8 +239,10 @@ release.bat            builds the zip and installer: release.bat 0.1.0
 
 ## Roadmap
 
-- [ ] Full-screen and single-window capture
-- [ ] Capture timer (3 s / 5 s / 10 s)
+- [x] Full-screen and single-window capture
+- [x] Capture timer (5 s / 10 s)
+- [x] Screen recording (MP4)
+- [ ] Audio in recordings (microphone / system sound)
 - [x] Markup: pen, highlighter, arrows, boxes, ellipses, text
 - [ ] Blur / pixelate tool for hiding sensitive info
 - [ ] Crop in the editor

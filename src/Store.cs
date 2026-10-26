@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ShotTray
 {
-    // Where screenshots live. Shared by the tray app and the `shot` CLI.
+    // Where screenshots and recordings live. Shared by the tray app and the `shot` CLI.
     static class Store
     {
         public const int KeepDays = 7;
@@ -14,11 +14,21 @@ namespace ShotTray
 
         public static string NewPath()
         {
+            return NewPath("shot_", ".png");
+        }
+
+        public static string NewVideoPath()
+        {
+            return NewPath("rec_", ".mp4");
+        }
+
+        static string NewPath(string prefix, string ext)
+        {
             Directory.CreateDirectory(Folder);
             string stamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string path = Path.Combine(Folder, "shot_" + stamp + ".png");
+            string path = Path.Combine(Folder, prefix + stamp + ext);
             for (int n = 2; File.Exists(path); n++)
-                path = Path.Combine(Folder, "shot_" + stamp + "_" + n + ".png");
+                path = Path.Combine(Folder, prefix + stamp + "_" + n + ext);
             return path;
         }
 
@@ -35,7 +45,8 @@ namespace ShotTray
         {
             if (!Directory.Exists(Folder)) return;
             DateTime cutoff = DateTime.Now.AddDays(-KeepDays);
-            foreach (FileInfo f in new DirectoryInfo(Folder).GetFiles("shot_*.png"))
+            var dir = new DirectoryInfo(Folder);
+            foreach (FileInfo f in dir.GetFiles("shot_*.png").Concat(dir.GetFiles("rec_*.mp4")))
             {
                 if (f.LastWriteTime >= cutoff) continue;
                 try { f.Delete(); }
